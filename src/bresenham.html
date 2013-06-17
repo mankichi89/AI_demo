@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        <script type="text/javascript" src="../shared/lib/easeljs-0.6.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/tweenjs-0.4.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/movieclip-0.6.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/preloadjs-0.3.1.min.js"></script>
+        
+        <script src="../shared/toolbox/PerformanceMonitor.js"></script>
+        <script src="../shared/toolbox/QuadCell2D.js"></script>
+        <script src="../shared/toolbox/TileMap2D.js"></script>
+        <script src="bresenham/Bresenham.js"></script>
+        <title>Bresenham</title>
+        
+        <script type="text/javascript">
+            var stage, canvas;
+            function init () {
+                canvas = document.getElementById ("root-canvas");
+                stage = new createjs.Stage (canvas);
+                
+                var tilemap = new TileMap2D (20, 20, 40, 30);
+                tilemap.defineCellType ("obstacle", "#000000");
+                tilemap.defineCellType ("start_node", "#000099");
+                tilemap.defineCellType ("end_node", "#DDDD00");
+                tilemap.defineCellType ("road", "#009900");
+                tilemap.setCellType (10, 15, "start_node");
+                tilemap.setCellType (30, 20, "end_node");
+                
+                
+                var monitor = new PerformanceMonitor ();
+                monitor.showFPS();
+                stage.addChild (tilemap);
+                stage.addChild (monitor);
+                
+                tilemap.addEventListener ("mousedown", onPickCell);
+                
+                var algorithim = new Bresenham ();
+                algorithim.setStartNode ({x: 10, y: 15});
+                algorithim.setEndNode ({x: 30, y: 20});
+                algorithim.start();
+                
+                for (var i = 0, l = algorithim.path.length; i < l; i++) {
+                    tilemap.setCellType (algorithim.path[i].x, algorithim.path[i].y, "road");
+                }
+
+                createjs.Ticker.setFPS (24);
+                createjs.Ticker.addListener (stage);
+                
+                var curPos;
+                function onPickCell (evt) {
+                    var pos = tilemap.getPosAt (evt.stageX, evt.stageY);
+                    
+                    // check type of target cell based on it's color
+                    var type = tilemap.getCellType (pos.x, pos.y);
+                    if (type == "obstacle") {
+                        tilemap.setCellType (pos.x, pos.y, "empty");
+                        evt.addEventListener ("mousemove", onEditingObtacle);
+                    }
+                    else if (type == "empty") {
+                        tilemap.setCellType (pos.x, pos.y, "obstacle");
+                        evt.addEventListener ("mousemove", onEditingObtacle);
+                    }
+                    else if (type == "start_node") {
+                        evt.addEventListener ("mousemove", onMoveStartNode);
+                    }
+                    else if (type == "end_node") {
+                        evt.addEventListener ("mousemove", onMoveEndNode);
+                    }
+                    
+                    evt.addEventListener ("mouseup", function () {
+                        evt.removeAllEventListeners ("mousemove");
+                        evt.removeAllEventListeners ("mouseup");
+                    })
+                    curPos = pos;
+                }
+                
+                function onEditingObtacle (evt) {
+                    var pos = tilemap.getPosAt (evt.stageX, evt.stageY);
+                    
+                    // prevent overlap cell
+                    if (pos.x == curPos.x && pos.y == curPos.y) return;
+                    curPos = pos;
+                    
+                    var type = tilemap.getCellType (pos.x, pos.y);
+                    if (type == "obstacle") {
+                        tilemap.setCellType (pos.x, pos.y, "empty");
+                    }
+                    else if (type == "empty") {
+                        tilemap.setCellType (pos.x, pos.y, "obstacle");
+                    }
+                }
+                
+                function onMoveStartNode (evt) {
+                    var pos = tilemap.getPosAt (evt.stageX, evt.stageY);
+                    
+                    // prevent overlap cell
+                    if (pos.x == curPos.x && pos.y == curPos.y) return;
+                                        
+                    tilemap.setCellType (pos.x, pos.y, "start_node");
+                    tilemap.setCellType (curPos.x, curPos.y, "empty");
+                    curPos = pos;
+                }
+                
+                function onMoveEndNode (evt) {
+                    var pos = tilemap.getPosAt (evt.stageX, evt.stageY);
+                    
+                    // prevent overlap cell
+                    if (pos.x == curPos.x && pos.y == curPos.y) return;
+                    
+                    tilemap.setCellType (pos.x, pos.y, "end_node");
+                    tilemap.setCellType (curPos.x, curPos.y, "empty");
+                    curPos = pos;
+                }
+                
+            }
+        </script>
+    </head>
+
+    <body onload="init()">
+        <canvas id="root-canvas" width="800" height="600"></canvas>
+    </body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        <script type="text/javascript" src="../shared/lib/easeljs-0.6.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/tweenjs-0.4.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/movieclip-0.6.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/preloadjs-0.3.1.min.js"></script>
+        <script type="text/javascript" src="../shared/lib/jquery-1.9.1.js"></script>
+        <script type="text/javascript" src="../shared/lib/jquery-ui-1.10.3.custom.min.js"></script>
+        
+        <script src="../shared/toolbox/PerformanceMonitor.js"></script>
+        <script src="a-star/Astar.js"></script>
+        <script src="../shared/toolbox/TileMap2D.js"></script>
+        <script src="../shared/toolbox/QuadCell2D.js"></script>
+        <title>A star</title>
+        
+        <script type="text/javascript">
+            var stage, canvas;
+            function init () {
+                canvas = document.getElementById ("root-canvas");
+                stage = new createjs.Stage (canvas);
+                
+                createjs.Ticker.setFPS (24);
+                createjs.Ticker.addListener (stage);
+                
+                var tilemap = new TileMap2D (20, 20, 40, 30);
+                stage.addChild (tilemap);
+                
+                var monitor = new PerformanceMonitor ();
+                monitor.showFPS();
+                stage.addChild (monitor);
+                
+                var astar = new Astar ();
+                astar.setMapData (tilemap.map);
+                
+                var path = astar.findPath ({x: 2, y: 2}, {x: 33, y: 20});
+                for (var i = 0, l = path.length; i < l; i++) {
+                    if (i == 0) {
+                        tilemap.setCellColor (path[i].x, path[i].y, "#000099");
+                    }
+                    else if (i == l-1) {
+                        tilemap.setCellColor (path[i].x, path[i].y, "#FFFF00")
+                    }
+                    else {
+                        (function (pos) {
+                            setTimeout(function () {
+                                tilemap.setCellColor (pos.x, pos.y, "#009900");
+                            }, i * 50);
+                        }) (path[i]);
+                    }
+                }
+                
+            }
+        </script>
+    </head>
+
+    <body onload="init()">
+        <canvas id="root-canvas" width="800" height="600"></canvas>
+        <div id="option-panel">
+            <form>
+                <label><input type="radio"/>Manhattan</label>
+                <label><input type="radio"/></label>
+            </form>
+        </div>
+    </body>
+</html>
